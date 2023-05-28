@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  frontend:
+    image: sermalenk/skypro-front:lesson-38
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+  api:
+    image: alexjohanson/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID
+    restart: always
+    environment:
+      ...
+    depends_on:
+      db:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+  migrations:
+    image: alexjohanson/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID
+    environment:
+      ...
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "python ./manage.py migrate" 
+
+  db:
+    image: postgres:latest
+    environment:
+      ...
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
