@@ -1,24 +1,28 @@
 version: "3.9"
 
 services:
-  front:
-    image: sermalenk/skypro-front:lesson-34
-    container_name: frontend
+  db:
+    image: postgres:15.2
+    container_name: db
     ports:
-      - "80:80"
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
     restart: always
-    depends_on:
-      - api
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build: .
     container_name: api
     command: python manage.py runserver 0.0.0.0:8000
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-    env_file: .env
     environment:
       DB_HOST: db
     depends_on:
@@ -26,11 +30,13 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
 
   migrations:
-    build:
-      context: .
-    env_file: .env
+    build: .
     environment:
       DB_HOST: db
     container_name: migrations
@@ -39,24 +45,16 @@ services:
         condition: service_healthy
     command: python manage.py migrate
 
-  db:
-    image: postgres:15.2
+  front:
+    image: sermalenk/skypro-front:lesson-34
+    container_name: frontend
     ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: "postgres"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
+      - "80:80"
     restart: always
-    container_name: db
-    volumes:
-      - db_data:/var/lib/postgresql/data/
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 15
+    depends_on:
+      api:
+        condition: service_started
+
 
 volumes:
   db_data:
-  frontend:
