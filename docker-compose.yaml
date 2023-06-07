@@ -39,6 +39,9 @@ services:
     build: .
     environment:
       DB_HOST: db
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
     container_name: migrations
     depends_on:
       db:
@@ -46,7 +49,7 @@ services:
     command: python manage.py migrate
 
   front:
-    image: sermalenk/skypro-front:lesson-34
+    image: sermalenk/skypro-front:lesson-35
     container_name: frontend
     ports:
       - "80:80"
