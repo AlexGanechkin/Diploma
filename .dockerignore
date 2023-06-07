@@ -1,0 +1,6 @@
+.github/
+venv/
+README.md
+Step-by-step instruction.md
+deploy/
+.gitignore
