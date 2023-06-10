@@ -26,8 +26,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'core',
     'social_django',
+    'django_filters',
+    'core',
+    'goals',
 ]
 
 MIDDLEWARE = [
@@ -72,7 +74,7 @@ DATABASES = {
        'NAME': env('POSTGRES_DB'),
        'USER': env('POSTGRES_USER'),
        'PASSWORD': env('POSTGRES_PASSWORD'),
-       'HOST': env('POSTGRES_HOST', default='0.0.0.0'),
+       'HOST': env('POSTGRES_HOST', default='127.0.0.1'),
        'PORT': '5432',
    }
 }
@@ -138,3 +140,7 @@ SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/categories'
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/login-error/'
 SOCIAL_AUTH_USER_MODEL = 'core.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination'
+}
