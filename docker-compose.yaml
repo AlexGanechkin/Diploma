@@ -19,6 +19,19 @@ services:
       timeout: 5s
       retries: 5
 
+  migrations:
+    build: .
+    environment:
+      DB_HOST: db
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    container_name: migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python manage.py migrate
+
   api:
     build: .
     container_name: api
@@ -35,21 +48,20 @@ services:
     volumes:
       - .:/app
 
-  migrations:
+  bot:
     build: .
+    container_name: bot
+    command: python manage.py runbot
     environment:
       DB_HOST: db
-      POSTGRES_DB: "postgres"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-    container_name: migrations
     depends_on:
       db:
         condition: service_healthy
-    command: python manage.py migrate
+      migrations:
+        condition: service_completed_successfully
 
   front:
-    image: sermalenk/skypro-front:lesson-37
+    image: sermalenk/skypro-front:lesson-38
     container_name: frontend
     ports:
       - "80:80"

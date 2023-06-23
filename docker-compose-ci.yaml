@@ -19,6 +19,19 @@ services:
       timeout: 5s
       retries: 5
 
+  migrations:
+    image: alexjohanson/todolist:${GITHUB_REF_NAME}-${GITHUB_RUN_ID}
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      BOT_TOKEN: ${BOT_TOKEN}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "python ./manage.py migrate"
+
   api:
     image: alexjohanson/todolist:${GITHUB_REF_NAME}-${GITHUB_RUN_ID}
     container_name: api
@@ -29,29 +42,37 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       SOCIAL_AUTH_VK_OAUTH2_KEY: ${SOCIAL_AUTH_VK_OAUTH2_KEY}
       SOCIAL_AUTH_VK_OAUTH2_SECRET: ${SOCIAL_AUTH_VK_OAUTH2_SECRET}
+      BOT_TOKEN: ${BOT_TOKEN}
     restart: always
     depends_on:
       db:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     ports:
       - "8000:8000"
     volumes:
       - .:/app
 
-  migrations:
+  bot:
     image: alexjohanson/todolist:${GITHUB_REF_NAME}-${GITHUB_RUN_ID}
+    container_name: bot
     environment:
       POSTGRES_HOST: db
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      BOT_TOKEN: ${BOT_TOKEN}
+    restart: always
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "python ./manage.py migrate" 
+      migrations:
+        condition: service_completed_successfully
+    command: sh -c "python manage.py runbot"
 
   frontend:
-    image: sermalenk/skypro-front:lesson-37
+    image: sermalenk/skypro-front:lesson-38
     container_name: frontend
     restart: always
     ports:

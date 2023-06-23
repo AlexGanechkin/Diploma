@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django_filters',
     'core',
     'goals',
+    'bot',
 ]
 
 MIDDLEWARE = [
@@ -141,6 +142,6 @@ SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/categories'
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/login-error/'
 SOCIAL_AUTH_USER_MODEL = 'core.User'
 
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination'
-}
+REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination'}
+
+BOT_TOKEN = env.str('BOT_TOKEN')
