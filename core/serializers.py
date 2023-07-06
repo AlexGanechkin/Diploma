@@ -1,3 +1,13 @@
+""" Пакет сериализаторов для управления пользователями
+
+Данный модуль описывает следующие сериализаторы:
+    RegistrationSerializer - Сериализатор для регистрации пользователя;
+    LoginSerializer - Сериализатор для авторизации пользователя;
+    UserSerializer - Сериализатор для отображения информации пользователю;
+    UpdatePasswordSerializer - Сериализатор для обновления пароля
+
+"""
+
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
@@ -33,12 +43,16 @@ class RegistrationSerializer(serializers.ModelSerializer):
             'password_repeat',
         )
 
-    def validate(self, attrs: dict):
+    def validate(self, attrs: dict) -> dict:
+        """ Проверяет совпадение и валидность введенного пароля """
+
         if attrs['password'] != attrs['password_repeat']:
             raise ValidationError('password and password repeated are not equal')
         return attrs
 
     def create(self, validated_data: dict) -> USER_MODEL:
+        """ Создает пользователя (пароль кэшируется)"""
+
         del validated_data['password_repeat']
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
@@ -52,10 +66,12 @@ class LoginSerializer(serializers.ModelSerializer):
         model = USER_MODEL
         fields = '__all__'
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> USER_MODEL:
+        """ Проверяет совпадает ли введенный пользователь с имеющимися в базе """
+
         if not (user := authenticate(
-            username=validated_data['username'],
-            password=validated_data['password']
+                username=validated_data['username'],
+                password=validated_data['password']
         )):
             raise AuthenticationFailed
         return user
@@ -73,16 +89,23 @@ class UpdatePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, write_only=True)
 
     def validate(self, attrs):
+        """ Проверки: передаётся ли пользователь вместе с другими данными, совпадают ли введеные старые пароли """
+
         if not (user := attrs['user']):
             raise NotAuthenticated
+
         if not user.check_password(attrs['old_password']):
             raise serializers.ValidationError({'old_password': 'incorrect password'})
         return attrs
 
     def create(self, validated_data: dict):
+        """ Ограничивает доступ к методу create """
+
         raise NotImplementedError
 
     def update(self, instance: user, validated_data):
+        """ Кэширует и обновляет пароль """
+
         instance.password = make_password(validated_data['new_password'])
         instance.save(update_fields=('password',))
         return instance

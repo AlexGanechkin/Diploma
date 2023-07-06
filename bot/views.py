@@ -17,6 +17,6 @@ class VerificationView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         tg_user: TgUser = serializer.save(user=request.user)
 
-        TgClient().send_message(tg_user.chat_id, 'Пользователь верифицирован')
+        TgClient().send_message(chat_id=tg_user.chat_id, text='Пользователь верифицирован')
 
         return Response(serializer.data)

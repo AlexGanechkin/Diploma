@@ -2,9 +2,7 @@ name: Build and Deploy workflow
 #on: [push]
 on:
   push:
-    branches:
-      - master
-      - dev_38
+
 jobs:
   build_and_push:
     runs-on: ubuntu-latest

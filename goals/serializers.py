@@ -1,3 +1,22 @@
+""" Пакет сериализаторов для создания/просмотра/изменения/удаления сущностей приложения
+
+Данный модуль описывает сериализаторы для:
+- досок:
+    BoardSerializer - для создания доски;
+    BoardParticipantSerializer - для получения участника доски;
+    BoardWithParticipantSerializer - для получения детальной информации по доске, обновление списка участников доски;
+- категорий:
+    GoalCategorySerializer - для создания категории;
+    GoalCategoryWithUserSerializer - для получения списка категорий и детальной информации по категории;
+- целей:
+    GoalSerializer - для создания цели;
+    GoalWithUserSerializer - для получения списка целей и детальной информации по цели;
+- комментариев:
+    GoalCommentSerializer - для создания комментария;
+    GoalCommentWithUserSerializer - для получения списка комментариев и детальной информации по комментарию
+
+"""
+
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -9,6 +28,7 @@ from goals.models import GoalCategory, Goal, GoalComment, Board, BoardParticipan
 
 
 class BoardSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Board
         fields = '__all__'
@@ -25,6 +45,8 @@ class BoardParticipantSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated', 'board')
 
     def validate_user(self, user: User) -> User:
+        """ Проверяет роль пользователя """
+
         if self.context['request'].user == user:
             raise ValidationError('Failed to change your role')
         return user
@@ -39,6 +61,8 @@ class BoardWithParticipantSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated')
 
     def update(self, instance: Board, validated_data: dict) -> Board:
+        """ Обновляет список участников доски, обновляет название доски """
+
         request: Request = self.context['request']
 
         with transaction.atomic():
@@ -68,14 +92,16 @@ class GoalCategorySerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated', 'user', 'is_deleted')
 
     def validate_board(self, board: Board) -> Board:
+        """ Проверяет наличие доски у категории, права пользователя на доступ к категории """
+
         if board.is_deleted:
             raise ValidationError('Board is deleted')
 
         if not BoardParticipant.objects.filter(
-            board_id=board.id,
-            role__in=[BoardParticipant.Role.owner, BoardParticipant.Role.writer],
-            user_id=self.context['request'].user
-        ).exists():
+                    board_id=board.id,
+                    role__in=[BoardParticipant.Role.owner, BoardParticipant.Role.writer],
+                    user_id=self.context['request'].user
+                ).exists():
             raise PermissionDenied
 
         return board
@@ -94,6 +120,8 @@ class GoalSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated', 'user')
 
     def validate_category(self, value: GoalCategory) -> GoalCategory:
+        """ Проверяет наличие категории, права пользователя на создание цели """
+
         if value.is_deleted:
             raise ValidationError('Category not found')
 
@@ -102,7 +130,7 @@ class GoalSerializer(serializers.ModelSerializer):
                 role__in=[BoardParticipant.Role.owner, BoardParticipant.Role.writer],
                 user_id=self.context['request'].user
         ).exists():
-            raise PermissionDenied
+            raise PermissionDenied('must be owner or writer in project')
 
         return value
 
@@ -111,7 +139,6 @@ class GoalSerializer(serializers.ModelSerializer):
 
 
 class GoalWithUserSerializer(GoalSerializer):
-    #user = ProfileSerializer(read_only=True)
     user = UserSerializer(read_only=True)
 
 
@@ -124,14 +151,16 @@ class GoalCommentSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated', 'user', 'is_deleted')
 
     def validate_goal(self, value):
+        """ Проверяет наличие цели, права пользователя на создание/редактирование комментария """
+
         if value.status == Goal.Status.archived:
             raise ValidationError('Goal not found')
 
         if not BoardParticipant.objects.filter(
-                board_id=value.category.board.id,
-                role__in=[BoardParticipant.Role.owner, BoardParticipant.Role.writer],
-                user_id=self.context['request'].user
-        ).exists():
+                    board_id=value.category.board.id,
+                    role__in=[BoardParticipant.Role.owner, BoardParticipant.Role.writer],
+                    user_id=self.context['request'].user
+                ).exists():
             raise PermissionDenied
 
         return value

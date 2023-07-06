@@ -8,8 +8,8 @@ env = Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
 env.read_env(BASE_DIR.joinpath('.env'))
 
-#SECRET_KEY = env('SECRET_KEY')
-SECRET_KEY = "secret-key"
+# SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = 'secret-key'
 
 DEBUG = env('DEBUG', default=False)
 
@@ -80,6 +80,7 @@ DATABASES = {
    }
 }
 
+# Тестовая база для тестирования тестов и приложения
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',

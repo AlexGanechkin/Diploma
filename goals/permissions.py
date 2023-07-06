@@ -1,3 +1,14 @@
+""" Набор правил для управления доступами к сущностям приложения
+
+По умолчанию все действия доступны только аутентифицированным пользователям.
+Данный модуль описывает правила доступа пользователя (владельца/редактора/читателя) для:
+- досок (BoardPermission): создание доски доступно только владельцу
+- категорий (GoalCategoryPermission): создание/изменение категории доступно только владельцу и редактору
+- целей (GoalPermission): создание/изменение цели доступно только владельцу и редактору
+- комментариев (GoalCommentPermission): создание/изменение цели доступно только владельцу и редактору
+
+"""
+
 from typing import Any
 
 from rest_framework.generics import GenericAPIView
@@ -8,8 +19,10 @@ from goals.models import GoalCategory, Goal, GoalComment, Board, BoardParticipan
 
 
 class BoardPermission(IsAuthenticated):
+
     def has_object_permission(self, request: Request, view: GenericAPIView, obj: Board) -> bool:
         _filters: dict[str, Any] = {'user': request.user, 'board': obj}
+
         if request.method not in SAFE_METHODS:
             _filters['role'] = BoardParticipant.Role.owner
 
@@ -20,6 +33,7 @@ class GoalCategoryPermission(IsAuthenticated):
 
     def has_object_permission(self, request: Request, view: GenericAPIView, obj: GoalCategory) -> bool:
         _filters: dict[str, Any] = {'user': request.user, 'board': obj.board}
+
         if request.method not in SAFE_METHODS:
             _filters['role__in'] = [BoardParticipant.Role.owner, BoardParticipant.Role.writer]
 
@@ -30,6 +44,7 @@ class GoalPermission(IsAuthenticated):
 
     def has_object_permission(self, request: Request, view: GenericAPIView, obj: Goal) -> bool:
         _filters: dict[str, Any] = {'user': request.user, 'board': obj.category.board}
+
         if request.method not in SAFE_METHODS:
             _filters['role__in'] = [BoardParticipant.Role.owner, BoardParticipant.Role.writer]
 
@@ -39,6 +54,8 @@ class GoalPermission(IsAuthenticated):
 class GoalCommentPermission(IsAuthenticated):
 
     def has_object_permission(self, request: Request, view: GenericAPIView, obj: GoalComment) -> bool:
+
         if request.method in SAFE_METHODS:
             return True
+
         return obj.user == request.user
